@@ -72,7 +72,7 @@ export const IntegratePayment = catchAsyncError(async (req, res, next) => {
 
 export const StripeTest = catchAsyncError(async (req, res, next) => {
     try {
-        const order = await StripeOrder.findOne({ user: req.body.userID });
+        const order = await StripeOrder.findOne({ user: req.params.userID });
         if (order) {
             res.status(200).json(order);
         }
