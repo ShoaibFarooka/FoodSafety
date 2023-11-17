@@ -73,7 +73,7 @@ export const IntegratePayment = catchAsyncError(async (req, res, next) => {
 });
 
 export const StripeHooks = catchAsyncError(async (req, res, next) => {
-    console.log(req.body);
+    console.log(req);
     const sig = req.headers['stripe-signature'];
 
     let event;
