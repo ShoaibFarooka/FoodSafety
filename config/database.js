@@ -1,19 +1,20 @@
 /** @format */
 
 import { connect } from 'mongoose';
+import dotenv from 'dotenv';
+dotenv.config();
 
 const connectDatabase = () => {
-	return new Promise((resolve, reject) => {
-		connect(process.env.DB_URI2, {})
-			.then((data) => {
-				console.log(`Connected to database at ${data.connection.host}:${data.connection.port}/${data.connection.name}`);
-				resolve(data);
-			})
-			.catch((error) => {
-				console.error('Database connection error:', error);
-				reject('Database connection error');
-			});
-	});
+	// connect(process.env.DB_URI2, {})
+	connect(process.env.DB_URI2, {})
+		.then((data) => {
+			console.log(
+				`Connected to database at ${data.connection.host}:${data.connection.port}/${data.connection.name}`,
+			);
+		})
+		.catch((error) => {
+			console.error('Database connection error:', error);
+		});
 };
 
 export default connectDatabase;
