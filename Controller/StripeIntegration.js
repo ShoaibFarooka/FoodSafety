@@ -71,6 +71,16 @@ export const IntegratePayment = catchAsyncError(async (req, res, next) => {
 
 
 export const StripeTest = catchAsyncError(async (req, res, next) => {
-    console.log('Request Received...');
-    res.status(200).json(req.body);
+    try {
+        const order = await StripeOrder.findOne({ user: req.body.userID });
+        if (order) {
+            res.status(200).json(order);
+        }
+        else {
+            res.status(404).send('User Order Not Found!');
+        }
+    } catch (error) {
+        console.log('Error: ', error);
+        res.status(500).send('Internal Server Error!');
+    }
 });
