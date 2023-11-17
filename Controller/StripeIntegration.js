@@ -7,6 +7,9 @@ dotenv.config({ path: './config/.env' });
 //Stripe Payment Integration
 const stripe = Stripe(process.env.STRIPE_API_KEY);
 export const IntegratePayment = catchAsyncError(async (req, res, next) => {
+    if (!(typeof req.body.userID === 'string' && /^[0-9a-fA-F]{24}$/.test(req.body.userID))) {
+        return res.status(404).send("Invalid User ID!");
+    }
     try {
         const PlaceholderOrder = new StripeOrder({
             user: req.body.userID,
@@ -71,6 +74,9 @@ export const IntegratePayment = catchAsyncError(async (req, res, next) => {
 
 
 export const StripeTest = catchAsyncError(async (req, res, next) => {
+    if (!(typeof req.params.userID === 'string' && /^[0-9a-fA-F]{24}$/.test(req.params.userID))) {
+        return res.status(404).send("Invalid User ID!");
+    }
     try {
         const order = await StripeOrder.findOne({ user: req.params.userID });
         if (order) {
