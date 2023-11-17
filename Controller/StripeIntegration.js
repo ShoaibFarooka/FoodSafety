@@ -68,3 +68,9 @@ export const IntegratePayment = catchAsyncError(async (req, res, next) => {
         res.status(500).send('Internal Server Error!')
     }
 });
+
+
+export const StripeTest = catchAsyncError(async (req, res, next) => {
+    console.log('Request Received...');
+    res.status(200).json(req.body);
+});
