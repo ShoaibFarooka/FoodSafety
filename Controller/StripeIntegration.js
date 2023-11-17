@@ -72,8 +72,45 @@ export const IntegratePayment = catchAsyncError(async (req, res, next) => {
     }
 });
 
+export const StripeHooks = catchAsyncError(async (req, res, next) => {
+    console.log(req.body);
+    const sig = req.headers['stripe-signature'];
 
-export const StripeTest = catchAsyncError(async (req, res, next) => {
+    let event;
+
+    try {
+        event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOKS_KEY);
+    } catch (err) {
+        console.error('Webhook Error:', err.message);
+        return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    if (event.type === 'checkout.session.completed') {
+        const session = event.data.object;
+        const clientReferenceId = session.client_reference_id;
+
+        // Find and update your order in MongoDB
+        const updatedOrder = await StripeOrder.findOneAndUpdate(
+            { _id: clientReferenceId },
+            { 'paymentInfo.status': 'paid' },
+            { new: true }
+        );
+
+        if (updatedOrder) {
+            console.log('Order updated:', updatedOrder);
+            res.status(200).send('Order status updated!');
+        }
+        else {
+            res.status(500).send('Unable to update order status.');
+        }
+    }
+    else {
+        res.status(200).send('Not completed event.');
+    }
+});
+
+
+export const StripeOrderStatus = catchAsyncError(async (req, res, next) => {
     if (!(typeof req.params.userID === 'string' && /^[0-9a-fA-F]{24}$/.test(req.params.userID))) {
         return res.status(404).send("Invalid User ID!");
     }
