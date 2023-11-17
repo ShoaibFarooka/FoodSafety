@@ -18,7 +18,7 @@ import StripeIntegration from './routes/StripeIntegration.js';
 
 //Server Status
 app.get('/', (req, res) => {
-    res.status(200).send('Server is Up!');
+    res.status(200).send('Server is Up on Vercel!');
 });
 app.use('/api/v1', user);
 app.use('/api/v1', order);
