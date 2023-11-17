@@ -57,6 +57,8 @@ export const IntegratePayment = catchAsyncError(async (req, res, next) => {
                 itemsPrice: session.amount_total,
                 taxPrice: session.total_details.amount_tax,
                 totalPrice: session.amount_subtotal,
+                createdAt: Date.now(),
+                paidAt: null,
             },
         };
         const savedOrder = await StripeOrder.updateOne({ _id: savedPlaceholderOrder._id }, completeOrderDetails);
@@ -74,9 +76,6 @@ export const IntegratePayment = catchAsyncError(async (req, res, next) => {
 });
 
 export const StripeHooks = catchAsyncError(async (req, res, next) => {
-    console.log('Headers: ', req.headers);
-    console.log('Key: ', process.env.STRIPE_WEBHOOKS_KEY);
-    console.log('Body: ', req.body);
     const sig = req.headers['stripe-signature'];
 
     let event;
@@ -91,11 +90,15 @@ export const StripeHooks = catchAsyncError(async (req, res, next) => {
     if (event.type === 'checkout.session.completed') {
         const session = event.data.object;
         const clientReferenceId = session.client_reference_id;
-
-        // Find and update your order in MongoDB
+        console.log(Date.now());
         const updatedOrder = await StripeOrder.findOneAndUpdate(
             { _id: clientReferenceId },
-            { 'paymentInfo.status': 'paid' },
+            {
+                $set: {
+                    'paymentInfo.status': 'paid',
+                    'paymentInfo.paidAt': Date.now(),
+                },
+            },
             { new: true }
         );
 
