@@ -110,11 +110,23 @@ export const StripeHooks = catchAsyncError(async (req, res, next) => {
             res.status(500).send('Unable to update order status.');
         }
     }
+    else if (event.type === 'checkout.session.async_payment_failed') {
+        // Handle payment failure or cancellation
+        const session = event.data.object;
+        const clientReferenceId = session.client_reference_id;
+        // Delete the order
+        const deletedOrder = await StripeOrder.deleteOne({ _id: clientReferenceId });
+        if (deletedOrder.deletedCount > 0) {
+            console.log('Order deleted successfully.');
+            res.status(200).send('Order deleted!');
+        } else {
+            res.status(500).send('Unable to delete order.');
+        }
+    }
     else {
         res.status(200).send('Not completed event.');
     }
 });
-
 
 export const StripeOrderStatus = catchAsyncError(async (req, res, next) => {
     if (!(typeof req.params.userID === 'string' && /^[0-9a-fA-F]{24}$/.test(req.params.userID))) {
