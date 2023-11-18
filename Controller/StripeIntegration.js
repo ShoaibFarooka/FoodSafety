@@ -30,7 +30,7 @@ export const IntegratePayment = catchAsyncError(async (req, res, next) => {
             console.log('Unable to save placeholder order.');
             return res.status(500).send('Internal Server Error!');
         }
-        const sessionExpirationSeconds = 60*30; // 30 minutes minimum
+        const sessionExpirationSeconds = 60 * 30; // 30 minutes minimum
         const expirationTime = Math.floor(Date.now() / 1000) + sessionExpirationSeconds;
         const session = await stripe.checkout.sessions.create({
             line_items: [
@@ -144,7 +144,7 @@ export const StripeOrderStatus = catchAsyncError(async (req, res, next) => {
         return res.status(404).send("Invalid User ID!");
     }
     try {
-        const order = await StripeOrder.findOne({ user: req.params.userID });
+        const order = await StripeOrder.findOne({ user: req.params.userID, 'paymentInfo.status': 'paid' });
         if (order) {
             res.status(200).json(order);
         }
