@@ -30,6 +30,8 @@ export const IntegratePayment = catchAsyncError(async (req, res, next) => {
             console.log('Unable to save placeholder order.');
             return res.status(500).send('Internal Server Error!');
         }
+        const sessionExpirationSeconds = 60*30; // 30 minutes minimum
+        const expirationTime = Math.floor(Date.now() / 1000) + sessionExpirationSeconds;
         const session = await stripe.checkout.sessions.create({
             line_items: [
                 {
@@ -50,6 +52,7 @@ export const IntegratePayment = catchAsyncError(async (req, res, next) => {
             success_url: `${process.env.CLIENT_URL}/success`,
             cancel_url: `${process.env.CLIENT_URL}/course`,
             client_reference_id: savedPlaceholderOrder._id.toString(),
+            expires_at: expirationTime,
         });
         const completeOrderDetails = {
             paymentInfo: {
@@ -90,7 +93,6 @@ export const StripeHooks = catchAsyncError(async (req, res, next) => {
     if (event.type === 'checkout.session.completed') {
         const session = event.data.object;
         const clientReferenceId = session.client_reference_id;
-        console.log(Date.now());
         const updatedOrder = await StripeOrder.findOneAndUpdate(
             { _id: clientReferenceId },
             {
@@ -110,21 +112,30 @@ export const StripeHooks = catchAsyncError(async (req, res, next) => {
             res.status(500).send('Unable to update order status.');
         }
     }
-    else if (event.type === 'checkout.session.async_payment_failed') {
+    else if (event.type === 'checkout.session.expired') {
         // Handle payment failure or cancellation
         const session = event.data.object;
         const clientReferenceId = session.client_reference_id;
-        // Delete the order
-        const deletedOrder = await StripeOrder.deleteOne({ _id: clientReferenceId });
-        if (deletedOrder.deletedCount > 0) {
-            console.log('Order deleted successfully.');
-            res.status(200).send('Order deleted!');
-        } else {
-            res.status(500).send('Unable to delete order.');
+        const updatedOrder = await StripeOrder.findOneAndUpdate(
+            { _id: clientReferenceId },
+            {
+                $set: {
+                    'paymentInfo.status': 'failed',
+                },
+            },
+            { new: true }
+        );
+
+        if (updatedOrder) {
+            console.log('Order updated:', updatedOrder);
+            res.status(200).send('Order status updated!');
+        }
+        else {
+            res.status(500).send('Unable to update order status.');
         }
     }
     else {
-        res.status(200).send('Not completed event.');
+        res.status(200).send('Unhandled webhooks event.');
     }
 });
 
